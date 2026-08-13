@@ -1,0 +1,188 @@
+tramat: 1
+project:
+  name: acme-lakehouse
+  mode: standard
+conventions:
+  naming:
+    scheme: schema-per-source
+    catalog_per_env:
+      dev: acme_dev
+      prod: acme_prod
+  layout:
+    src_package: src
+graph:
+  defaults:
+    catalog: acme_prod
+    dev_catalog: acme_dev
+  budget:
+    tokens: 2000000
+    dbus: 40
+    on_breach: halt_and_report
+  steps:
+  - id: ingest_impect_events
+    status: shipped
+    task: bronze_impect_events
+    entrypoint: src/bronze/impect_events.py
+    reads: []
+    writes:
+    - ref: bronze.impect_events
+      kind: primary
+      via: observed
+    idempotency:
+      safe: true
+      strategy: overwrite_partition
+      partition_key: match_date
+      confirmed_by: marc
+      confirmed_at: 2026-07-14
+    contract: contracts/bronze/impect_events.yaml
+    last_reconciled: 2026-08-11 04:02:00+00:00
+  - id: scrape_transfermarkt
+    status: shipped
+    task: bronze_transfermarkt
+    entrypoint: src/bronze/transfermarkt.py
+    reads: []
+    writes:
+    - ref: bronze.tm_valuations
+      kind: primary
+      via: observed
+    - ref: bronze._tm_scrape_log
+      kind: metrics
+      via: declared
+    idempotency:
+      safe: false
+      strategy: none
+      note: appending scraper with external HTTP; retry requires fresh target + promote
+    side_effects:
+    - external_http
+    recovery:
+      strategy: write_to_fresh_target
+      target_pattern: bronze.tm_valuations_attempt_{run_id}
+      promote_on: gate_pass
+    contract: contracts/bronze/tm_valuations.yaml
+    last_reconciled: 2026-08-11 04:02:00+00:00
+  - id: conform_players
+    status: shipped
+    task: silver_player_conformed
+    entrypoint: src/silver/conform_players.py
+    reads:
+    - ref: bronze.impect_events
+      via: observed
+    - ref: shared_reference.identity.players_global
+      via: declared
+    writes:
+    - ref: silver.player_conformed
+      kind: primary
+      via: observed
+    - ref: silver._quarantine_players
+      kind: quarantine
+      via: observed
+    idempotency:
+      safe: true
+      strategy: merge_on_key
+      merge_key:
+      - player_id
+      - match_date
+      confirmed_by: marc
+      confirmed_at: 2026-07-14
+    contract: contracts/silver/player_conformed.yaml
+    last_reconciled: 2026-08-11 04:02:00+00:00
+  - id: normalise_valuations
+    status: tested
+    task: silver_valuation_normalised
+    entrypoint: src/silver/normalise_valuations.py
+    reads:
+    - ref: bronze.tm_valuations
+      via: inferred
+    writes:
+    - ref: silver.valuation_normalised
+      kind: primary
+      via: declared
+    idempotency:
+      safe: true
+      strategy: overwrite_table
+      confirmed_by: marc
+      confirmed_at: 2026-08-10
+    contract: contracts/silver/valuation_normalised.yaml
+    dev_schema: acme_dev.agent_normalise_valuations_r7741
+    last_reconciled: null
+  - id: build_valuation_weekly
+    status: implemented
+    task: gold_player_valuation_weekly
+    entrypoint: src/gold/valuation_weekly.py
+    reads:
+    - ref: silver.player_conformed
+      via: declared
+    - ref: silver.valuation_normalised
+      via: declared
+    writes:
+    - ref: gold.player_valuation_weekly
+      kind: primary
+      via: declared
+    - ref: gold._metrics_valuation_weekly
+      kind: metrics
+      via: declared
+    idempotency:
+      safe: true
+      strategy: overwrite_partition
+      partition_key: gameweek_start
+      confirmed_by: marc
+      confirmed_at: 2026-08-10
+    contract: contracts/gold/player_valuation_weekly.yaml
+    dev_schema: acme_dev.agent_build_valuation_weekly_r7741
+    last_reconciled: null
+  - id: train_talent_id
+    status: planned
+    task: model_talent_id
+    entrypoint: src/models/talent_id.py
+    reads:
+    - ref: gold.player_valuation_weekly
+      via: declared
+    - ref: silver.player_conformed
+      via: declared
+    writes:
+    - ref: models:/talent_id
+      kind: primary
+      materialization: mlflow_model
+      via: declared
+    - ref: gold._talent_id_eval
+      kind: metrics
+      via: declared
+    idempotency:
+      safe: false
+      strategy: none
+      note: training is non-deterministic; each run is a new model version
+    contract: contracts/models/talent_id.yaml
+  - id: legacy_shot_pipeline
+    status: shipped
+    task: legacy_shots
+    entrypoint: src/legacy/shots.py
+    violates_single_primary: true
+    violation_reason: 'Writes silver.shots and gold.shot_quality in one task. Spans two waves, so the
+      graph position is not meaningful. Split tracked in TICKET-103.
+
+      '
+    autonomous_eligible: false
+    reads:
+    - ref: bronze.impect_events
+      via: observed
+    writes:
+    - ref: silver.shots
+      kind: primary
+      via: observed
+    - ref: gold.shot_quality
+      kind: primary
+      via: observed
+    idempotency:
+      safe: true
+      strategy: overwrite_table
+      confirmed_by: marc
+      confirmed_at: 2026-06-02
+    last_reconciled: 2026-08-11 04:02:00+00:00
+    contract: contracts/legacy/shots.yaml
+  known_disagreements:
+  - kind: dab_vs_asset_graph
+    detail: 'DAB serialises normalise_valuations after conform_players, but they share no assets. Wave
+      planner places both in wave 2. Likely legacy job wiring.
+
+      '
+    ticket: TICKET-104

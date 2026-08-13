@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+
+# internal working docs — never published
+.internal/
