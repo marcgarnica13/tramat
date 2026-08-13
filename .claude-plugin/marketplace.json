@@ -1,0 +1,18 @@
+{
+  "name": "tramat",
+  "owner": {
+    "name": "Marc Garnica Caparrós",
+    "url": "https://github.com/marcgarnica13"
+  },
+  "metadata": {
+    "description": "Tramat — an AI agent harness for data engineering on Databricks: contract-first specs, a checked-in data graph, deterministic reconciliation."
+  },
+  "plugins": [
+    {
+      "name": "tramat",
+      "source": "./",
+      "description": "Contract-first harness for Databricks data engineering: data-graph manifest, deterministic reconciliation, reuse indexing, and doctor checks. Requires the official databricks plugin (databricks aitools).",
+      "category": "data-engineering"
+    }
+  ]
+}

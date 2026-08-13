@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/marcgarnica13/tramat/schemas/tramat.schema.json",
+  "title": "tramat.yml",
+  "description": "The tramat manifest: one file, two sections. `conventions:` carries the repo's naming/layout/compute choices; `graph:` carries the data graph — every step, what it reads and writes, how each edge is known, and whether a human signed off that a retry is safe. Shape lives here; semantics (waves, single-primary, signed idempotency) live in scripts/graph.py.",
+  "type": "object",
+  "required": ["tramat"],
+  "properties": {
+    "tramat": {
+      "const": 1,
+      "description": "Manifest format version."
+    },
+    "project": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "mode": { "enum": ["standard", "adapted"] }
+      }
+    },
+    "conventions": {
+      "type": "object",
+      "description": "Repo conventions. Deliberately loose — adapt mode records whatever the repo already does; doctor speaks in advisories here, never errors.",
+      "properties": {
+        "naming": {
+          "type": "object",
+          "properties": {
+            "scheme": { "type": "string" },
+            "catalog_per_env": { "type": "object" },
+            "layer_style": { "type": "string" },
+            "gold_semantic": { "type": "boolean" },
+            "landing_volume": { "type": "string" }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "properties": {
+            "resources_dir": { "type": "string" },
+            "src_package": { "type": "string" },
+            "pipelines_dir": { "type": "string" }
+          }
+        },
+        "compute": { "type": "object" },
+        "targets": { "type": "object" },
+        "qa": { "type": "object" },
+        "ml": { "type": "object" },
+        "openwiki": { "type": "object" },
+        "brain": {
+          "type": "object",
+          "properties": {
+            "mode": { "enum": ["off", "skill", "mcp"] },
+            "skill": { "type": "string" },
+            "mcp": { "type": "string" }
+          }
+        },
+        "tenancy": { "type": "object" },
+        "overrides": { "type": "array" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "second_opinion": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "adapter": { "type": "string" }
+          }
+        }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "properties": {
+        "defaults": {
+          "type": "object",
+          "properties": {
+            "catalog": { "type": "string" },
+            "dev_catalog": { "type": "string" }
+          }
+        },
+        "budget": {
+          "type": "object",
+          "properties": {
+            "tokens": { "type": "number" },
+            "dbus": { "type": "number" },
+            "on_breach": { "type": "string" }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/step" }
+        },
+        "serialize": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["steps"],
+            "properties": {
+              "steps": { "type": "array", "items": { "type": "string" } },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "known_disagreements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "detail"],
+            "properties": {
+              "kind": { "type": "string" },
+              "detail": { "type": "string" },
+              "ticket": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "read_edge": {
+      "type": "object",
+      "required": ["ref", "via"],
+      "properties": {
+        "ref": { "type": "string" },
+        "via": { "enum": ["declared", "observed", "inferred"] }
+      }
+    },
+    "write_edge": {
+      "type": "object",
+      "required": ["ref", "via"],
+      "properties": {
+        "ref": { "type": "string" },
+        "kind": { "enum": ["primary", "quarantine", "metrics", "checkpoint", "side_effect"] },
+        "via": { "enum": ["declared", "observed", "inferred"] },
+        "materialization": { "type": "string" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["id", "writes"],
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "enum": ["planned", "implemented", "tested", "shipped"] },
+        "task": { "type": "string" },
+        "entrypoint": { "type": "string" },
+        "reads": { "type": "array", "items": { "$ref": "#/$defs/read_edge" } },
+        "writes": { "type": "array", "items": { "$ref": "#/$defs/write_edge" } },
+        "idempotency": {
+          "type": "object",
+          "properties": {
+            "safe": { "type": "boolean" },
+            "strategy": {
+              "enum": ["overwrite_table", "overwrite_partition", "merge_on_key", "append_dedup", "none"]
+            },
+            "partition_key": { "type": "string" },
+            "merge_key": { "type": "array", "items": { "type": "string" } },
+            "confirmed_by": { "type": "string" },
+            "confirmed_at": { "type": "string" },
+            "note": { "type": "string" }
+          }
+        },
+        "side_effects": { "type": "array", "items": { "type": "string" } },
+        "recovery": {
+          "type": "object",
+          "properties": {
+            "strategy": { "type": "string" },
+            "target_pattern": { "type": "string" },
+            "promote_on": { "type": "string" }
+          }
+        },
+        "contract": { "type": "string" },
+        "dev_schema": { "type": "string" },
+        "last_reconciled": { "type": ["string", "null"] },
+        "violates_single_primary": { "type": "boolean" },
+        "violation_reason": { "type": "string" },
+        "autonomous_eligible": { "type": "boolean" }
+      }
+    }
+  }
+}

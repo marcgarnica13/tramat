@@ -10,9 +10,16 @@ Every data team knows the disease: the job that reports **SUCCESS** while writin
 2. **The graph is an artifact, not an inference.** `tramat.yml` carries your data graph: every step, what it reads and writes, *how you know* (`declared` by a human, `observed` from Unity Catalog lineage, or merely `inferred` from code — never confused), and whether a human signed off that a retry is safe. It's checked in. A change to your data graph is a diff someone approves.
 3. **Reconciliation is enforcement.** Three views of reality — the declared graph, what the code actually does, what UC lineage actually saw — diffed deterministically. An undeclared write is an *error*, because an undeclared write is precisely what turns a retry into duplicated client data.
 
-## What works today (M1)
+## What works today
 
-Three standalone scripts. Python ≥3.10 + PyYAML, nothing else, zero footprint in your repo.
+**As a Claude Code plugin (M2):** this repo is a plugin marketplace. Installing it gets you `/tramat:doctor` (environment + manifest checks, delegating workspace health to the official Databricks plugin), `/tramat:help`, the `tramat-core` operating rules for any repo with a `tramat.yml`, and two hooks — a sub-100ms session-start probe that tells the agent where the graph stands, and an advisory guard when enforced-tier rendered files are edited by hand.
+
+```
+/plugin marketplace add marcgarnica13/tramat
+/plugin install tramat@tramat
+```
+
+**As three standalone scripts (M1):** Python ≥3.10 + PyYAML, nothing else, zero footprint in your repo.
 
 ### 🗺 `graph.py` — validate the graph, compute the waves
 
