@@ -68,4 +68,4 @@ The Databricks *how* lives in the official databricks plugin skills (`databricks
 
 ## Layering
 
-Commands never invoke commands. Shared behavior lives in skills; commands compose skills and scripts. (Currently shipped: `/tramat:init`, `/tramat:doctor`, `/tramat:help` — the stage machine and scaffold commands land in later milestones; `/tramat:help` shows the roadmap.)
+Commands never invoke commands. Shared behavior lives in skills; commands compose skills and scripts. (Currently shipped: `/tramat:init`, `/tramat:doctor`, `/tramat:new-source`, `/tramat:verify`, `/tramat:help`, plus the `dev-runner` agent — the stage machine and remaining scaffolds land in later milestones; `/tramat:help` shows the roadmap.)

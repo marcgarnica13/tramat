@@ -1,7 +1,7 @@
 {
   "name": "tramat",
   "description": "AI agent harness for data engineering on Databricks: contract-first specs (ODCS), a checked-in data graph with provenance and signed idempotency, deterministic reconciliation of declared vs code vs UC lineage, and reuse indexing. Sequences the official Databricks agent skills — never reimplements them.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": {
     "name": "Marc Garnica Caparrós",
     "url": "https://github.com/marcgarnica13"
@@ -24,5 +24,6 @@
     "reconciliation"
   ],
   "skills": "./skills/",
-  "commands": "./commands/"
+  "commands": "./commands/",
+  "agents": ["./agents/dev-runner.md"]
 }
