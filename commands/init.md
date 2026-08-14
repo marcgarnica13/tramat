@@ -33,6 +33,8 @@ The starting point is `${CLAUDE_PLUGIN_ROOT}/examples/starter-lakehouse/` — a 
 
 Deviations from the example are fine — they're the point. Just keep `tramat.yml` truthful about whatever conventions this repo actually adopts.
 
+Watch for example-only artifacts when copying: the example's `.gitignore` ignores `uv.lock` (so tramat's CI resolves fresh) — a real repo should commit its lockfile, so drop that ignore. The example also pins no `workspace.host`; a real repo pins it.
+
 If the directory is not a git repo, `git init` and stage everything; commit only if the user asks.
 
 ## 4. Verify — Tier 0, all of it
