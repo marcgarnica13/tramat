@@ -6,14 +6,13 @@ Orient the user in tramat. Answer whatever they asked (`$ARGUMENTS`); with no sp
 
 ## Available now
 
-- `/tramat:init` — greenfield scaffold: canonical repo layout (manifest, DAB skeleton, seeded `src/` helpers with tests, CI), Tier-0 green out of the box. Refuses on existing bundle repos (those onboard instead).
-- `/tramat:doctor` — environment + manifest checks (Databricks CLI/plugin/auth, tramat.yml schema, graph validation, enforced-file drift).
+- `/tramat:init` — greenfield setup: the agent composes the repo (manifest, DAB skeleton, `src/` helpers with tests, CI) from the proven `examples/starter-lakehouse/` starting point, adapted to your answers — no fill-in-the-blanks templates. Refuses on existing bundle repos (those onboard instead).
+- `/tramat:doctor` — environment + manifest checks (Databricks CLI/plugin/auth, tramat.yml schema, graph validation) plus semantic convention advisories (run_as pinned to an SP, schedules only in prod, Tier-0 CI present).
 - Deterministic scripts (run directly from `${CLAUDE_PLUGIN_ROOT}/scripts/`):
   - `graph.py tramat.yml` — validate the data graph, compute parallel waves, pick the next step.
   - `reconcile.py tramat.yml --src src/ [--lineage lineage.json]` — diff declared graph × code × UC lineage; undeclared writes are errors. `--inventory` for brownfield discovery.
   - `repomap.py --bundle databricks.yml --src src` — bundle→task→import reverse index: who already wrote that helper; orphan modules; dead entrypoints.
-  - `render.py` — THE template renderer (`list` / `vars` / `apply` / `check`); every generated file is recorded in `.tramat/applied.json` with a governance tier, `check` reports enforced-file drift.
-- The `tramat-core` skill auto-applies in repos with a `tramat.yml`: manifest-first, edge provenance, signed idempotency, governance tiers.
+- The `tramat-core` skill auto-applies in repos with a `tramat.yml`: manifest-first, edge provenance, signed idempotency, examples-as-starting-points.
 
 ## On the roadmap (not yet installed — don't attempt to invoke)
 

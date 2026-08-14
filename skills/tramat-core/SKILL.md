@@ -1,6 +1,6 @@
 ---
 name: tramat-core
-description: Core operating rules for any repo with a tramat.yml manifest (or a Databricks bundle repo adopting tramat). Read this before writing or planning any pipeline, ingestion, transform, or ML code in such a repo — it defines the manifest as the source of truth, edge provenance, signed idempotency, governance tiers, naming, and the token-economy rules for the whole harness.
+description: Core operating rules for any repo with a tramat.yml manifest (or a Databricks bundle repo adopting tramat). Read this before writing or planning any pipeline, ingestion, transform, or ML code in such a repo — it defines the manifest as the source of truth, edge provenance, signed idempotency, examples-as-starting-points, naming, and the token-economy rules for the whole harness.
 ---
 
 # tramat-core
@@ -43,18 +43,13 @@ Never re-derive by reading code what a plugin script computes. From the plugin r
 | Is the manifest valid? What can run in parallel? What's next? | `python3 scripts/graph.py tramat.yml` |
 | Does the code / UC lineage match the declared graph? | `python3 scripts/reconcile.py tramat.yml --src src/` |
 | Does this helper already exist? Who uses it? | `python3 scripts/repomap.py --bundle databricks.yml --src src` |
-| Is the environment healthy? | `python3 scripts/doctor.py` |
-| Did an enforced-tier file drift? | `python3 scripts/render.py check` |
+| Is the environment healthy? Does the repo match its conventions? | `python3 scripts/doctor.py` |
 
 An undeclared write found by reconcile is an **error to fix** (declare it or remove it), never noise to suppress.
 
-## Rule 5 — governance tiers
+## Rule 5 — examples are starting points, never funnels
 
-Every file tramat generates goes through `scripts/render.py` — never ad-hoc sed or inline heredocs — and is recorded in `.tramat/applied.json` with a tier:
-
-- **enforced** — doctor re-renders and diffs; hand edits surface as drift. Change via manifest + re-render, or adopt into an override. Kept deliberately tiny.
-- **seeded** — generated once, then project-owned. Edit freely.
-- **merged** — doctor checks required keys/blocks only; the rest is project-owned.
+Tramat ships no renderer and no generated-file registry. Scaffolding means: you + the plan + the developer compose the files, using the shipped reference material (`examples/starter-lakehouse/`, kept Tier-0 green in CI) as a proven starting point — copy verbatim, adapt, or skip. Every file in a user repo is **project-owned**; nothing is frozen, diffed, or re-rendered. The senior-engineer judgment lives in `doctor`'s semantic checks instead (run_as pinned to an SP, schedules only in prod, Tier-0 CI present, schema-valid manifest) — advisories the developer can always overrule. When a change alters a convention, record it in `tramat.yml` so the manifest stays true.
 
 ## Naming (standard mode)
 

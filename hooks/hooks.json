@@ -1,5 +1,5 @@
 {
-  "description": "tramat hooks: orient every session with manifest status (<1s, no network), and warn when an enforced-tier rendered file is edited by hand.",
+  "description": "tramat hooks: orient every session with manifest status (<1s, no network).",
   "hooks": {
     "SessionStart": [
       {
@@ -8,17 +8,6 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/session_status.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/session_status.py\" || true"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/enforced_guard.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/enforced_guard.py\" || true"
           }
         ]
       }

@@ -1,4 +1,4 @@
-# merged tier: keep the ruff hooks; add whatever else you need.
+# Starting point: keep the ruff hooks; add whatever else you need.
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4

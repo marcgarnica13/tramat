@@ -1,4 +1,4 @@
-# {{tramat.project_name}}
+# starter-lakehouse
 
 Databricks lakehouse project scaffolded by [tramat](https://github.com/marcgarnica13/tramat).
 
@@ -10,7 +10,7 @@ Databricks lakehouse project scaffolded by [tramat](https://github.com/marcgarni
 | `databricks.yml` | Databricks Asset Bundle (dev / staging / prod targets) |
 | `resources/` | DAB job & pipeline definitions |
 | `pipelines/` | Lakeflow Spark Declarative Pipelines source |
-| `src/{{tramat.package}}/` | Shared helpers: env, delta, merge, hashing, qa |
+| `src/starter_lakehouse/` | Shared helpers: env, delta, merge, hashing, qa |
 | `contracts/` | Per-asset ODCS data contracts |
 | `docs/runbook.md` | Incident log |
 
@@ -25,4 +25,4 @@ databricks bundle validate     # bundle sanity
 databricks bundle deploy -t dev
 ```
 
-Catalogs: dev `{{tramat.dev_catalog}}` · staging `{{tramat.staging_catalog}}` · prod `{{tramat.prod_catalog}}`. Schedules run in prod only. Jobs run as `{{tramat.run_as_sp}}`.
+Catalogs: dev `starter_dev` · staging `starter_staging` · prod `starter`. Schedules run in prod only. Jobs run as `sp-starter-bundles`.

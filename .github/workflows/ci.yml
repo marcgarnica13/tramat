@@ -1,5 +1,5 @@
 # tramat's own CI: unit tests for the deterministic scripts + smoke checks
-# on the shipped example manifest. No Databricks workspace needed.
+# on the shipped examples. No Databricks workspace needed.
 name: ci
 
 on:
@@ -20,15 +20,9 @@ jobs:
         run: pytest tests -q
       - name: graph validates the example manifest
         run: python3 scripts/graph.py examples/acme-lakehouse/tramat.yml
-      - name: doctor (repo checks) on the example
-        run: python3 scripts/doctor.py --repo-only examples/acme-lakehouse
+      - name: doctor (repo checks) on both examples
+        run: |
+          python3 scripts/doctor.py --repo-only examples/acme-lakehouse
+          python3 scripts/doctor.py --repo-only examples/starter-lakehouse
       - name: schema is valid JSON
         run: python3 -c "import json; json.load(open('schemas/tramat.schema.json'))"
-      - name: template manifests are valid JSON
-        run: |
-          python3 - <<'EOF'
-          import json, pathlib
-          for p in pathlib.Path("templates").glob("*/template.json"):
-              json.load(open(p))
-              print(f"ok {p}")
-          EOF

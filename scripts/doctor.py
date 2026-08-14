@@ -14,8 +14,11 @@ auth profiles (never auto-selected — validity is only probed for a profile the
 user names), codex binary for the second-opinion gate.
 
 Repo checks: tramat.yml present, schema-valid against
-schemas/tramat.schema.json, and the graph section's semantic validation
-(delegated to graph.py — waves, single-primary, signed idempotency).
+schemas/tramat.schema.json, the graph section's semantic validation
+(delegated to graph.py — waves, single-primary, signed idempotency), and
+semantic bundle-convention advisories (run_as pinned to a service principal,
+schedules only in prod, Tier-0 CI present). Conventions are checked
+semantically — files are project-owned and never byte-diffed.
 
 Databricks *workspace* health is not checked here — that is
 /databricks:doctor's job; tramat delegates, never vendors.
@@ -334,41 +337,86 @@ class Doctor:
         else:
             self.add("graph", "ok", detail)
 
-    def check_render_drift(self) -> None:
-        """Enforced-tier files: re-render from applied.json and diff (render.py check)."""
-        if not (self.repo / ".tramat" / "applied.json").exists():
-            self.add("render-drift", "skip", "no .tramat/applied.json (nothing rendered here)")
-            return
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        try:
-            import render as render_mod
+    def check_bundle_conventions(self, yaml_ok: bool) -> None:
+        """Semantic convention checks on the bundle — advisories, never byte-diffs.
 
-            findings = render_mod.cmd_check(self.repo)
-        except Exception as e:
-            self.add("render-drift", "error", f"render.py check crashed: {e}")
+        Files are project-owned; tramat's opinion lives in checks like these,
+        not in frozen templates: run_as pinned to a service principal,
+        schedules only in prod, Tier-0 CI present.
+        """
+        bundle_path = self.repo / "databricks.yml"
+        if not bundle_path.exists():
+            self.add("bundle-conventions", "skip", "no databricks.yml")
             return
-        drifted = [f for f in findings if f["status"] in ("edited", "missing")]
-        stale = [f for f in findings if f["status"] in ("template-updated", "unknown-template")]
-        if drifted:
-            first = drifted[0]
+        if not yaml_ok:
+            self.add("bundle-conventions", "skip", "PyYAML missing")
+            return
+        import yaml
+
+        try:
+            bundle = yaml.safe_load(bundle_path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as e:
+            self.add("bundle-conventions", "error", f"databricks.yml does not parse: {e}")
+            return
+        if not isinstance(bundle, dict):
+            self.add("bundle-conventions", "error", "databricks.yml is not a mapping")
+            return
+
+        run_as = bundle.get("run_as") or {}
+        if run_as.get("service_principal_name"):
+            self.add("run-as", "ok", f"pinned to SP {run_as['service_principal_name']}")
+        elif run_as.get("user_name"):
             self.add(
-                "render-drift",
-                "error",
-                f"{len(drifted)} of {len(findings)} enforced file(s) drifted — "
-                f"first: {first['target']} ({first['status']})",
-                "python3 scripts/render.py check — revert, re-render with --force, "
-                "or adopt into a tramat.yml override",
-            )
-        elif stale:
-            self.add(
-                "render-drift",
+                "run-as",
                 "warn",
-                f"{len(stale)} enforced file(s) behind their template: "
-                + ", ".join(f["target"] for f in stale),
-                "re-render with --force to adopt the updated template",
+                f"pinned to a person ({run_as['user_name']}) — deploys break when they leave",
+                "pin run_as to a service principal",
             )
         else:
-            self.add("render-drift", "ok", f"{len(findings)} enforced file(s) match their templates")
+            self.add(
+                "run-as",
+                "warn",
+                "no run_as — jobs run as whoever last deployed",
+                "pin run_as.service_principal_name in databricks.yml",
+            )
+
+        offenders = []
+        for target_name, target in (bundle.get("targets") or {}).items():
+            if not isinstance(target, dict) or target_name == "prod" or target.get("mode") == "production":
+                continue
+            jobs = ((target.get("resources") or {}).get("jobs")) or {}
+            for job_name, job in jobs.items():
+                for key in ("schedule", "trigger"):
+                    block = (job or {}).get(key) or {}
+                    if block and block.get("pause_status") != "PAUSED":
+                        offenders.append(f"{target_name}:{job_name}")
+        for job_name, job in (((bundle.get("resources") or {}).get("jobs")) or {}).items():
+            for key in ("schedule", "trigger"):
+                block = (job or {}).get(key) or {}
+                if block and block.get("pause_status") != "PAUSED":
+                    offenders.append(f"(all targets):{job_name}")
+        if offenders:
+            self.add(
+                "schedules-prod-only",
+                "warn",
+                f"unpaused schedule/trigger outside prod: {', '.join(sorted(set(offenders)))}",
+                "define schedules under targets.prod.resources (or set pause_status: PAUSED)",
+            )
+        else:
+            self.add("schedules-prod-only", "ok", "no unpaused schedules outside prod")
+
+        workflows = list((self.repo / ".github" / "workflows").glob("*.yml")) + list(
+            (self.repo / ".github" / "workflows").glob("*.yaml")
+        )
+        if workflows:
+            self.add("ci-present", "ok", f"{len(workflows)} workflow(s) in .github/workflows")
+        else:
+            self.add(
+                "ci-present",
+                "info",
+                "no CI workflows found",
+                "run the Tier-0 gates (ruff/mypy/pytest/bundle validate) on every PR",
+            )
 
     # ---------- run ----------
 
@@ -383,7 +431,7 @@ class Doctor:
         else:
             yaml_ok = self.check_pyyaml()
         self.check_manifest(yaml_ok)
-        self.check_render_drift()
+        self.check_bundle_conventions(yaml_ok)
         return 1 if any(c.status == "error" for c in self.checks) else 0
 
 

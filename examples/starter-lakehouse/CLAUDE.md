@@ -1,4 +1,4 @@
-# {{tramat.project_name}}
+# starter-lakehouse
 
 Databricks lakehouse repo managed with [tramat](https://github.com/marcgarnica13/tramat). Rules for agents working here:
 
@@ -6,16 +6,13 @@ Databricks lakehouse repo managed with [tramat](https://github.com/marcgarnica13
 
 `tramat.yml` is the source of truth: `conventions:` (naming, layout, compute) are this repo's choices — never re-derive or contradict them; `graph:` is the data graph — trust it over your reading of the code or the DAB task order. Every read/write edge carries `via:` provenance; `idempotency.safe: true` counts only when signed (`confirmed_by` + `confirmed_at`). Never retry a step that isn't signed retry-safe.
 
-## Governance tiers
+## Ownership
 
-Rendered files are recorded in `.tramat/applied.json` with a tier:
-- **enforced** (`databricks.yml`, `.github/workflows/pr-checks.yml`): don't hand-edit — change tramat.yml and re-render, or adopt an override. Drift shows up in `/tramat:doctor`.
-- **seeded** (`src/`, `tests/`, docs): project-owned, edit freely.
-- **merged** (`tramat.yml`, `pyproject.toml`, this file): yours, but keep the required blocks.
+Every file in this repo is project-owned — edit freely. When you change a convention (naming, layout, compute, targets), record the change in `tramat.yml` so the manifest stays true; `/tramat:doctor` checks the repo against it and reports gaps as advisories.
 
 ## Layout
 
-- `src/{{tramat.package}}/` — shared helpers (env, delta, merge, hashing, qa). Check here before writing a new helper.
+- `src/starter_lakehouse/` — shared helpers (env, delta, merge, hashing, qa). Check here before writing a new helper.
 - `pipelines/` — Lakeflow Spark Declarative Pipelines source.
 - `resources/` — DAB job/pipeline definitions, one YAML per source/domain.
 - `contracts/` — per-asset ODCS data contracts.

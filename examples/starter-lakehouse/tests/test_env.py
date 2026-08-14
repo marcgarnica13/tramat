@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from {{tramat.package}} import env
+from starter_lakehouse import env
 
 
 @pytest.fixture(autouse=True)

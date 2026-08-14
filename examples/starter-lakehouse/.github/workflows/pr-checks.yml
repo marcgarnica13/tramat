@@ -1,4 +1,4 @@
-# Rendered by tramat — ENFORCED tier. Tier-0 verification on every PR.
+# Tier-0 verification on every PR.
 # Bundle validate runs only when workspace auth secrets are configured
 # (DATABRICKS_HOST + DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET,
 # a validate-only service principal is enough). Lint/types/tests never

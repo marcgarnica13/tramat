@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from {{tramat.package}} import qa
+from starter_lakehouse import qa
 
 
 def test_row_count_within_tolerance_passes():

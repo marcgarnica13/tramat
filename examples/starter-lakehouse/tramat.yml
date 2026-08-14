@@ -1,25 +1,25 @@
 # tramat manifest — the source of truth for this repo's conventions and data graph.
-# merged tier: doctor validates it against the schema; the content is yours.
+# Yours to edit; /tramat:doctor validates it against the schema.
 # Docs: https://github.com/marcgarnica13/tramat
 tramat: 1
 
 project:
-  name: {{tramat.project_name}}
+  name: starter-lakehouse
   mode: standard
 
 conventions:
   naming:
     scheme: schema-per-source
     catalog_per_env:
-      dev: {{tramat.dev_catalog}}
-      staging: {{tramat.staging_catalog}}
-      prod: {{tramat.prod_catalog}}
+      dev: starter_dev
+      staging: starter_staging
+      prod: starter
     layer_style: suffix          # players_bronze / players_silver / players_gold
     gold_semantic: true          # dim_* / fct_* allowed in gold
     landing_volume: "/Volumes/{catalog}/{source}/landing"
   layout:
     resources_dir: resources
-    src_package: src/{{tramat.package}}
+    src_package: src/starter_lakehouse
     pipelines_dir: pipelines
   compute:
     default: serverless          # every job task and SDP pipeline unless assigned below
@@ -29,17 +29,17 @@ conventions:
     assignments: {}              # e.g. { my_scraper_job: my-classic-profile }
   targets:
     dev:
-      catalog: {{tramat.dev_catalog}}
+      catalog: starter_dev
       schedules: false
-      run_as_sp: {{tramat.run_as_sp}}
+      run_as_sp: sp-starter-bundles
     staging:
-      catalog: {{tramat.staging_catalog}}
+      catalog: starter_staging
       schedules: false
-      run_as_sp: {{tramat.run_as_sp}}
+      run_as_sp: sp-starter-bundles
     prod:
-      catalog: {{tramat.prod_catalog}}
+      catalog: starter
       schedules: true            # schedules live only in prod
-      run_as_sp: {{tramat.run_as_sp}}
+      run_as_sp: sp-starter-bundles
   qa:
     coverage_min: 0.30
     row_count_tolerance: 0.05
@@ -55,6 +55,6 @@ review:
 
 graph:
   defaults:
-    catalog: {{tramat.prod_catalog}}
-    dev_catalog: {{tramat.dev_catalog}}
+    catalog: starter
+    dev_catalog: starter_dev
   steps: []                      # scaffold commands add steps here; edges carry via:, retries need signed idempotency

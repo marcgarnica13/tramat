@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from {{tramat.package}} import merge
+from starter_lakehouse import merge
 
 
 def test_quote_identifier():

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from {{tramat.package}} import hashing
+from starter_lakehouse import hashing
 
 
 def test_content_hash_key_order_invariant():

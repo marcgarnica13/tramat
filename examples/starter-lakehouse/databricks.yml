@@ -1,18 +1,13 @@
-# Rendered by tramat — ENFORCED tier.
-# Hand edits surface as drift in /tramat:doctor. Change the values in
-# tramat.yml and re-render, or adopt the edit into an override there.
+# Canonical DAB skeleton — a proven starting point, not a contract.
+# Adapt freely; keep tramat.yml's conventions in sync with what you change.
 bundle:
-  name: {{tramat.project_name}}
+  name: starter-lakehouse
 
 include:
   - resources/*.yml
 
-# gitignored files are never synced; only tracked-but-workspace-irrelevant
-# paths need excluding here.
-sync:
-  exclude:
-    - ".tramat"
-
+# gitignored files are never synced, so no sync.exclude needed here; add one
+# only for tracked-but-workspace-irrelevant paths.
 artifacts:
   default:
     type: whl
@@ -24,10 +19,12 @@ artifacts:
 # deployed — jobs created by a since-deactivated employee then break every
 # subsequent deploy.
 run_as:
-  service_principal_name: {{tramat.run_as_sp}}
+  service_principal_name: sp-starter-bundles
 
-workspace:
-  host: {{tramat.workspace_host}}
+# No workspace.host pinned in this example: the CLI resolves it from your
+# profile (--profile / DATABRICKS_HOST). A real repo should pin its hosts:
+# workspace:
+#   host: https://<your-workspace>.cloud.databricks.com
 
 # Deployments live under /Shared (team bundles run as a service principal,
 # not a person) — that is intentional, so the workspace-users grant is
@@ -39,7 +36,7 @@ permissions:
 variables:
   CATALOG:
     description: Unity Catalog for this deployment (catalog = environment)
-    default: {{tramat.dev_catalog}}
+    default: starter_dev
   DEPLOYMENT_ENV:
     description: Deployment environment name, exported to tasks
     default: ${bundle.target}
@@ -50,15 +47,15 @@ targets:
     workspace:
       root_path: /Shared/.bundle/dev/${bundle.name}
     variables:
-      CATALOG: {{tramat.dev_catalog}}
+      CATALOG: starter_dev
   staging:
     workspace:
       root_path: /Shared/.bundle/staging/${bundle.name}
     variables:
-      CATALOG: {{tramat.staging_catalog}}
+      CATALOG: starter_staging
   prod:
     mode: production
     workspace:
       root_path: /Shared/.bundle/prod/${bundle.name}
     variables:
-      CATALOG: {{tramat.prod_catalog}}
+      CATALOG: starter

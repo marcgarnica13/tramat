@@ -1,8 +1,9 @@
-# Golden-repo check: render a fresh repo from the templates and prove it is
-# green at Tier 0 (ruff / format / mypy / pytest + render drift + doctor).
-# `bundle validate` additionally runs when validate-only workspace secrets
-# are configured (DATABRICKS_HOST / DATABRICKS_CLIENT_ID /
-# DATABRICKS_CLIENT_SECRET); everything else needs no workspace.
+# Golden check: the starter example — the reference material /tramat:init
+# composes new repos from — must be green at Tier 0 (ruff / format / mypy /
+# pytest + doctor). `bundle validate` additionally runs when validate-only
+# workspace secrets are configured (DATABRICKS_HOST / DATABRICKS_CLIENT_ID /
+# DATABRICKS_CLIENT_SECRET); the example pins no host, so the CLI resolves
+# the workspace from those env vars. Everything else needs no workspace.
 name: golden
 
 on:
@@ -17,41 +18,23 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    defaults:
+      run:
+        working-directory: examples/starter-lakehouse
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
-      - name: render a fresh repo
-        run: |
-          uv run --no-project --with pyyaml python scripts/render.py apply repo \
-            --dest "$RUNNER_TEMP/golden" \
-            --var project_name=golden-lakehouse \
-            --var package=golden_lakehouse \
-            --var workspace_host="${DATABRICKS_HOST:-https://example.cloud.databricks.com}" \
-            --var dev_catalog=golden_dev \
-            --var staging_catalog=golden_staging \
-            --var prod_catalog=golden \
-            --var run_as_sp=sp-golden-bundles
-      - name: uv sync
-        working-directory: ${{ runner.temp }}/golden
-        run: uv sync
-      - name: ruff
-        working-directory: ${{ runner.temp }}/golden
-        run: uv run ruff check . && uv run ruff format --check .
-      - name: mypy
-        working-directory: ${{ runner.temp }}/golden
-        run: uv run mypy src
-      - name: pytest
-        working-directory: ${{ runner.temp }}/golden
-        run: uv run pytest
-      - name: render drift is clean
-        run: uv run --no-project --with pyyaml python scripts/render.py check --dest "$RUNNER_TEMP/golden"
+      - run: uv sync
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run mypy src
+      - run: uv run pytest
       - name: doctor (repo checks)
-        run: uv run --no-project --with pyyaml python scripts/doctor.py --repo-only "$RUNNER_TEMP/golden"
+        working-directory: .
+        run: uv run --no-project --with pyyaml python scripts/doctor.py --repo-only examples/starter-lakehouse
       - uses: databricks/setup-cli@main
         if: env.DATABRICKS_HOST != ''
       - name: bundle validate
         if: env.DATABRICKS_HOST != ''
-        working-directory: ${{ runner.temp }}/golden
         run: databricks bundle validate

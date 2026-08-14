@@ -1,4 +1,4 @@
-# Runbook — {{tramat.project_name}}
+# Runbook — starter-lakehouse
 
 Operational knowledge lives here, not in YAML comments. When an incident is
 resolved, append an entry; when a config value exists *because* of an

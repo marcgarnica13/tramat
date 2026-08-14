@@ -3,7 +3,7 @@ from __future__ import annotations
 from conftest import FakeDataFrame
 from pyspark.sql.types import IntegerType, NullType, StringType, StructField, StructType
 
-from {{tramat.package}} import delta
+from starter_lakehouse import delta
 
 
 def test_delta_writer_always_enables_cdf():

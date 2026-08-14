@@ -18,9 +18,9 @@ from typing import Any
 
 #: catalog = environment (schema-per-source naming; see tramat.yml)
 CATALOGS: dict[str, str] = {
-    "dev": "{{tramat.dev_catalog}}",
-    "staging": "{{tramat.staging_catalog}}",
-    "prod": "{{tramat.prod_catalog}}",
+    "dev": "starter_dev",
+    "staging": "starter_staging",
+    "prod": "starter",
 }
 DEFAULT_ENV = "dev"
 
@@ -73,7 +73,7 @@ def get_catalog(env: str | None = None, dbutils: Any = None) -> str:
 
 
 def get_landing_dir(source: str, env: str | None = None, dbutils: Any = None) -> str:
-    """UC Volume landing path for a source, e.g. ``/Volumes/{{tramat.dev_catalog}}/players/landing``."""
+    """UC Volume landing path for a source, e.g. ``/Volumes/starter_dev/players/landing``."""
     catalog = get_catalog(env=env, dbutils=dbutils)
     return LANDING_VOLUME_PATTERN.format(catalog=catalog, source=source)
 

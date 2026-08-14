@@ -20,5 +20,6 @@ htmlcov/
 .env
 *.local.yml
 
-# NOTE: .tramat/applied.json is deliberately tracked — it is the governance
-# record for rendered files, not a cache.
+# This reference example resolves deps fresh so CI catches drift against
+# latest tooling. In a real project, commit your uv.lock.
+uv.lock
