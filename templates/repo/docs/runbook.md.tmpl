@@ -1,0 +1,19 @@
+# Runbook — {{tramat.project_name}}
+
+Operational knowledge lives here, not in YAML comments. When an incident is
+resolved, append an entry; when a config value exists *because* of an
+incident, link the entry next to it.
+
+## Incident log
+
+Newest first. One entry per incident:
+
+```
+### YYYY-MM-DD — <one-line symptom>
+- **Impact**: what broke, which tables/jobs, silent or loud
+- **Cause**: root cause once known
+- **Fix**: what change resolved it (link the PR)
+- **Follow-up**: guard added so it can't recur silently (QA check, contract, alert) — or why none
+```
+
+<!-- entries below -->

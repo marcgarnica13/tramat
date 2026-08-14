@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+from conftest import FakeDataFrame
+from pyspark.sql.types import IntegerType, NullType, StringType, StructField, StructType
+
+from {{tramat.package}} import delta
+
+
+def test_delta_writer_always_enables_cdf():
+    df = FakeDataFrame(columns=["a"])
+    writer = delta.delta_writer(df, mode="append")
+    assert writer.format_used == "delta"
+    assert writer.options["delta.enableChangeDataFeed"] == "true"
+    assert writer.mode_used == "append"
+    assert "mergeSchema" not in writer.options
+
+
+def test_delta_writer_schema_options():
+    df = FakeDataFrame(columns=["a"])
+    writer = delta.delta_writer(df, mode="overwrite", merge_schema=True, overwrite_schema=True)
+    assert writer.options["mergeSchema"] == "true"
+    assert writer.options["overwriteSchema"] == "true"
+
+
+VOID_SCHEMA = StructType(
+    [
+        StructField("id", IntegerType()),
+        StructField("name", StringType()),
+        StructField("empty_a", NullType()),
+        StructField("empty_b", NullType()),
+    ]
+)
+
+
+def test_null_type_columns():
+    assert delta.null_type_columns(VOID_SCHEMA) == ["empty_a", "empty_b"]
+    assert delta.null_type_columns(StructType([StructField("id", IntegerType())])) == []
+
+
+def test_defend_null_types_casts():
+    df = FakeDataFrame(schema=VOID_SCHEMA)
+    out = delta.defend_null_types(df)
+    assert set(out.with_columns) == {"empty_a", "empty_b"}
+    assert all(col.cast_to == "string" for col in out.with_columns.values())
+
+
+def test_defend_null_types_drop():
+    df = FakeDataFrame(schema=VOID_SCHEMA)
+    out = delta.defend_null_types(df, cast_to=None)
+    assert out.dropped == ("empty_a", "empty_b")
+
+
+def test_defend_null_types_noop():
+    df = FakeDataFrame(schema=StructType([StructField("id", IntegerType())]))
+    assert delta.defend_null_types(df) is df

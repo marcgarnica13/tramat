@@ -1,0 +1,58 @@
+from __future__ import annotations
+
+import pytest
+
+from {{tramat.package}} import qa
+
+
+def test_row_count_within_tolerance_passes():
+    assert qa.check_row_count(1000, 960, "t", tolerance=0.05) is None
+
+
+def test_row_count_drop_fails():
+    issue = qa.check_row_count(1000, 900, "t", tolerance=0.05)
+    assert issue is not None and issue.severity == "ERROR" and issue.code == "ROW_COUNT_DROP"
+
+
+def test_row_count_growth_and_first_run_pass():
+    assert qa.check_row_count(1000, 2000, "t") is None
+    assert qa.check_row_count(0, 500, "t") is None
+
+
+def test_check_duplicates():
+    assert qa.check_duplicates(0, "t") is None
+    issue = qa.check_duplicates(3, "t", keys=["id"])
+    assert issue is not None and issue.code == "DUPLICATE_KEYS"
+
+
+def test_check_nulls():
+    assert qa.check_nulls({"id": 0}, "t") == []
+    issues = qa.check_nulls({"id": 2, "name": 0}, "t")
+    assert len(issues) == 1 and issues[0].details["column"] == "id"
+
+
+def test_check_columns():
+    assert qa.check_columns(["a", "b"], ["a", "b"], "t") == []
+    missing = qa.check_columns(["a"], ["a", "b"], "t")
+    assert missing[0].code == "MISSING_COLUMNS"
+    extra = qa.check_columns(["a", "x"], ["a"], "t", allow_extra=False)
+    assert extra[0].severity == "WARN"
+
+
+def test_report_gate():
+    ok = qa.run_checks(None, [], qa.check_row_count(100, 100, "t"))
+    assert ok.ok and "PASS" in ok.summary()
+    bad = qa.run_checks(
+        qa.check_row_count(1000, 500, "t"),
+        qa.check_nulls({"id": 1}, "t"),
+    )
+    assert not bad.ok
+    assert len(bad.issues) == 2
+    with pytest.raises(RuntimeError, match="ROW_COUNT_DROP"):
+        bad.raise_if_failed()
+
+
+def test_skip_roundtrip(dbutils):
+    assert qa.should_skip(dbutils, "fetch") is None
+    qa.signal_skip(dbutils, "nothing new upstream")
+    assert qa.should_skip(dbutils, "fetch") == "nothing new upstream"

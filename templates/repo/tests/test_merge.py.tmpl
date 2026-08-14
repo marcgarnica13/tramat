@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+import pytest
+
+from {{tramat.package}} import merge
+
+
+def test_quote_identifier():
+    assert merge.quote_identifier("cat.sch.tbl") == "`cat`.`sch`.`tbl`"
+    assert merge.quote_identifier("plain") == "`plain`"
+
+
+@pytest.mark.parametrize("bad", ["with`tick", "a..b", "", "trailing."])
+def test_quote_identifier_rejects(bad):
+    with pytest.raises(ValueError):
+        merge.quote_identifier(bad)
+
+
+def test_build_merge_sql_shape():
+    sql = merge.build_merge_sql("cat.sch.players", "src_view", ["id", "season", "value"], ["id", "season"])
+    assert "MERGE INTO `cat`.`sch`.`players` AS target" in sql
+    assert "USING `src_view` AS source" in sql
+    assert "target.`id` = source.`id` AND target.`season` = source.`season`" in sql
+    # keys are never updated, non-key columns are
+    assert "UPDATE SET `value` = source.`value`" in sql
+    assert "`id` = source.`id`," not in sql
+    assert "INSERT (`id`, `season`, `value`) VALUES (source.`id`, source.`season`, source.`value`)" in sql
+
+
+def test_build_merge_sql_all_key_columns_skips_update():
+    sql = merge.build_merge_sql("t", "v", ["id"], ["id"])
+    assert "WHEN MATCHED" not in sql
+    assert "WHEN NOT MATCHED THEN INSERT" in sql
+
+
+def test_build_merge_sql_validates_keys():
+    with pytest.raises(ValueError, match="not in columns"):
+        merge.build_merge_sql("t", "v", ["a"], ["missing"])
+    with pytest.raises(ValueError, match="at least one"):
+        merge.build_merge_sql("t", "v", ["a"], [])

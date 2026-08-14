@@ -12,7 +12,7 @@ Every data team knows the disease: the job that reports **SUCCESS** while writin
 
 ## What works today
 
-**As a Claude Code plugin (M2):** this repo is a plugin marketplace. Installing it gets you `/tramat:doctor` (environment + manifest checks, delegating workspace health to the official Databricks plugin), `/tramat:help`, the `tramat-core` operating rules for any repo with a `tramat.yml`, and two hooks — a sub-100ms session-start probe that tells the agent where the graph stands, and an advisory guard when enforced-tier rendered files are edited by hand.
+**As a Claude Code plugin (M3):** this repo is a plugin marketplace. Installing it gets you `/tramat:init` (greenfield scaffold: manifest, DAB skeleton, seeded `src/` helpers with passing tests, CI — Tier-0 green out of the box), `/tramat:doctor` (environment + manifest checks + enforced-file drift, delegating workspace health to the official Databricks plugin), `/tramat:help`, the `tramat-core` operating rules for any repo with a `tramat.yml`, and two hooks — a sub-100ms session-start probe that tells the agent where the graph stands, and an advisory guard when enforced-tier rendered files are edited by hand. Every file tramat generates flows through one renderer (`scripts/render.py`) and is recorded in `.tramat/applied.json` with a governance tier — that single funnel is what kills sed-drift and vendored-copy drift.
 
 ```
 /plugin marketplace add marcgarnica13/tramat

@@ -1,0 +1,24 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# databricks
+.databricks/
+
+# local secrets / env
+.env
+*.local.yml
+
+# NOTE: .tramat/applied.json is deliberately tracked — it is the governance
+# record for rendered files, not a cache.

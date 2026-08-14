@@ -1,0 +1,32 @@
+{
+  "id": "repo",
+  "version": "0.1.0",
+  "description": "Canonical tramat repo scaffold (rendered by /tramat:init)",
+  "files": [
+    { "src": "tramat.yml.tmpl", "target": "tramat.yml", "tier": "merged" },
+    { "src": "databricks.yml.tmpl", "target": "databricks.yml", "tier": "enforced" },
+    { "src": "pyproject.toml.tmpl", "target": "pyproject.toml", "tier": "merged" },
+    { "src": "pre-commit-config.yaml.tmpl", "target": ".pre-commit-config.yaml", "tier": "merged" },
+    { "src": "gitignore.tmpl", "target": ".gitignore", "tier": "seeded" },
+    { "src": "CLAUDE.md.tmpl", "target": "CLAUDE.md", "tier": "merged" },
+    { "src": "AGENTS.md.tmpl", "target": "AGENTS.md", "tier": "merged" },
+    { "src": "README.md.tmpl", "target": "README.md", "tier": "seeded" },
+    { "src": "docs/runbook.md.tmpl", "target": "docs/runbook.md", "tier": "seeded" },
+    { "src": "workflows/pr-checks.yml.tmpl", "target": ".github/workflows/pr-checks.yml", "tier": "enforced" },
+    { "src": "_empty.tmpl", "target": "resources/.gitkeep", "tier": "seeded" },
+    { "src": "_empty.tmpl", "target": "pipelines/.gitkeep", "tier": "seeded" },
+    { "src": "_empty.tmpl", "target": "contracts/.gitkeep", "tier": "seeded" },
+    { "src": "src/init.py.tmpl", "target": "src/{{tramat.package}}/__init__.py", "tier": "seeded" },
+    { "src": "src/env.py.tmpl", "target": "src/{{tramat.package}}/env.py", "tier": "seeded" },
+    { "src": "src/delta.py.tmpl", "target": "src/{{tramat.package}}/delta.py", "tier": "seeded" },
+    { "src": "src/merge.py.tmpl", "target": "src/{{tramat.package}}/merge.py", "tier": "seeded" },
+    { "src": "src/hashing.py.tmpl", "target": "src/{{tramat.package}}/hashing.py", "tier": "seeded" },
+    { "src": "src/qa.py.tmpl", "target": "src/{{tramat.package}}/qa.py", "tier": "seeded" },
+    { "src": "tests/conftest.py.tmpl", "target": "tests/conftest.py", "tier": "seeded" },
+    { "src": "tests/test_env.py.tmpl", "target": "tests/test_env.py", "tier": "seeded" },
+    { "src": "tests/test_delta.py.tmpl", "target": "tests/test_delta.py", "tier": "seeded" },
+    { "src": "tests/test_merge.py.tmpl", "target": "tests/test_merge.py", "tier": "seeded" },
+    { "src": "tests/test_hashing.py.tmpl", "target": "tests/test_hashing.py", "tier": "seeded" },
+    { "src": "tests/test_qa.py.tmpl", "target": "tests/test_qa.py", "tier": "seeded" }
+  ]
+}

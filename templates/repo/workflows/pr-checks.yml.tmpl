@@ -1,0 +1,34 @@
+# Rendered by tramat — ENFORCED tier. Tier-0 verification on every PR.
+# Bundle validate runs only when workspace auth secrets are configured
+# (DATABRICKS_HOST + DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET,
+# a validate-only service principal is enough). Lint/types/tests never
+# need a workspace.
+name: pr-checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tier0:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy src
+      - run: uv run pytest
+      - uses: databricks/setup-cli@main
+        if: env.DATABRICKS_HOST != ''
+      - name: bundle validate
+        if: env.DATABRICKS_HOST != ''
+        run: databricks bundle validate

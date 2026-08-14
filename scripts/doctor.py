@@ -334,16 +334,56 @@ class Doctor:
         else:
             self.add("graph", "ok", detail)
 
+    def check_render_drift(self) -> None:
+        """Enforced-tier files: re-render from applied.json and diff (render.py check)."""
+        if not (self.repo / ".tramat" / "applied.json").exists():
+            self.add("render-drift", "skip", "no .tramat/applied.json (nothing rendered here)")
+            return
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        try:
+            import render as render_mod
+
+            findings = render_mod.cmd_check(self.repo)
+        except Exception as e:
+            self.add("render-drift", "error", f"render.py check crashed: {e}")
+            return
+        drifted = [f for f in findings if f["status"] in ("edited", "missing")]
+        stale = [f for f in findings if f["status"] in ("template-updated", "unknown-template")]
+        if drifted:
+            first = drifted[0]
+            self.add(
+                "render-drift",
+                "error",
+                f"{len(drifted)} of {len(findings)} enforced file(s) drifted — "
+                f"first: {first['target']} ({first['status']})",
+                "python3 scripts/render.py check — revert, re-render with --force, "
+                "or adopt into a tramat.yml override",
+            )
+        elif stale:
+            self.add(
+                "render-drift",
+                "warn",
+                f"{len(stale)} enforced file(s) behind their template: "
+                + ", ".join(f["target"] for f in stale),
+                "re-render with --force to adopt the updated template",
+            )
+        else:
+            self.add("render-drift", "ok", f"{len(findings)} enforced file(s) match their templates")
+
     # ---------- run ----------
 
-    def run(self) -> int:
-        self.check_python()
-        yaml_ok = self.check_pyyaml()
-        cli = self.check_databricks_cli()
-        self.check_databricks_plugin(cli)
-        self.check_auth()
-        self.check_codex()
+    def run(self, repo_only: bool = False) -> int:
+        if not repo_only:
+            self.check_python()
+            yaml_ok = self.check_pyyaml()
+            cli = self.check_databricks_cli()
+            self.check_databricks_plugin(cli)
+            self.check_auth()
+            self.check_codex()
+        else:
+            yaml_ok = self.check_pyyaml()
         self.check_manifest(yaml_ok)
+        self.check_render_drift()
         return 1 if any(c.status == "error" for c in self.checks) else 0
 
 
@@ -411,10 +451,15 @@ def main() -> int:
         "--profile",
         help="also probe auth validity for this named profile (never auto-selected)",
     )
+    ap.add_argument(
+        "--repo-only",
+        action="store_true",
+        help="skip environment checks (CLI/plugin/auth); repo checks only — for CI",
+    )
     args = ap.parse_args()
 
     doc = Doctor(repo=args.repo.resolve(), profile=args.profile)
-    code = doc.run()
+    code = doc.run(repo_only=args.repo_only)
 
     if args.json:
         print(

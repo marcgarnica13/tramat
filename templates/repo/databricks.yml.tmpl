@@ -1,0 +1,64 @@
+# Rendered by tramat — ENFORCED tier.
+# Hand edits surface as drift in /tramat:doctor. Change the values in
+# tramat.yml and re-render, or adopt the edit into an override there.
+bundle:
+  name: {{tramat.project_name}}
+
+include:
+  - resources/*.yml
+
+# gitignored files are never synced; only tracked-but-workspace-irrelevant
+# paths need excluding here.
+sync:
+  exclude:
+    - ".tramat"
+
+artifacts:
+  default:
+    type: whl
+    dynamic_version: true
+    build: uv build
+    path: .
+
+# Pin the job identity. Without this, run_as is whatever identity last
+# deployed — jobs created by a since-deactivated employee then break every
+# subsequent deploy.
+run_as:
+  service_principal_name: {{tramat.run_as_sp}}
+
+workspace:
+  host: {{tramat.workspace_host}}
+
+# Deployments live under /Shared (team bundles run as a service principal,
+# not a person) — that is intentional, so the workspace-users grant is
+# explicit. Restrict here if your workspace needs it.
+permissions:
+  - level: CAN_MANAGE
+    group_name: users
+
+variables:
+  CATALOG:
+    description: Unity Catalog for this deployment (catalog = environment)
+    default: {{tramat.dev_catalog}}
+  DEPLOYMENT_ENV:
+    description: Deployment environment name, exported to tasks
+    default: ${bundle.target}
+
+targets:
+  dev:
+    default: true
+    workspace:
+      root_path: /Shared/.bundle/dev/${bundle.name}
+    variables:
+      CATALOG: {{tramat.dev_catalog}}
+  staging:
+    workspace:
+      root_path: /Shared/.bundle/staging/${bundle.name}
+    variables:
+      CATALOG: {{tramat.staging_catalog}}
+  prod:
+    mode: production
+    workspace:
+      root_path: /Shared/.bundle/prod/${bundle.name}
+    variables:
+      CATALOG: {{tramat.prod_catalog}}

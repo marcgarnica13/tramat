@@ -44,12 +44,13 @@ Never re-derive by reading code what a plugin script computes. From the plugin r
 | Does the code / UC lineage match the declared graph? | `python3 scripts/reconcile.py tramat.yml --src src/` |
 | Does this helper already exist? Who uses it? | `python3 scripts/repomap.py --bundle databricks.yml --src src` |
 | Is the environment healthy? | `python3 scripts/doctor.py` |
+| Did an enforced-tier file drift? | `python3 scripts/render.py check` |
 
 An undeclared write found by reconcile is an **error to fix** (declare it or remove it), never noise to suppress.
 
 ## Rule 5 — governance tiers
 
-Files rendered by tramat carry a tier in `.tramat/applied.json`:
+Every file tramat generates goes through `scripts/render.py` — never ad-hoc sed or inline heredocs — and is recorded in `.tramat/applied.json` with a tier:
 
 - **enforced** — doctor re-renders and diffs; hand edits surface as drift. Change via manifest + re-render, or adopt into an override. Kept deliberately tiny.
 - **seeded** — generated once, then project-owned. Edit freely.
@@ -72,4 +73,4 @@ The Databricks *how* lives in the official databricks plugin skills (`databricks
 
 ## Layering
 
-Commands never invoke commands. Shared behavior lives in skills; commands compose skills and scripts. (Currently shipped: `/tramat:doctor`, `/tramat:help` — the stage machine and scaffold commands land in later milestones; `/tramat:help` shows the roadmap.)
+Commands never invoke commands. Shared behavior lives in skills; commands compose skills and scripts. (Currently shipped: `/tramat:init`, `/tramat:doctor`, `/tramat:help` — the stage machine and scaffold commands land in later milestones; `/tramat:help` shows the roadmap.)
