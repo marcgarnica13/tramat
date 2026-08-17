@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 
 import requests
 
-from <package>.env import get_landing_dir, get_param
+from <package>.env import get_param
 from <package>.hashing import filter_records_needing_update
 from <package>.delta import get_spark
 
@@ -69,12 +69,22 @@ def write_landing(records: list[dict], landing_dir: str, run_id: str) -> str:
     return path
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    # python_wheel_task named_parameters arrive as CLI ARGS (--CATALOG=x), NOT
+    # env vars — argparse with get_param defaults serves both jobs and local runs.
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--CATALOG", default=get_param("CATALOG"))
+    ap.add_argument("--JOB_RUN_ID", default=get_param("JOB_RUN_ID", default=""))
+    args = ap.parse_args(argv)
+    if not args.CATALOG:
+        raise RuntimeError("CATALOG is required (named parameter or env var)")
+
     spark = get_spark()
     token = get_param("<SOURCE>_TOKEN", required=True)   # secret via env/secret scope; never in code
-    run_id = get_param("JOB_RUN_ID", default=datetime.now(timezone.utc).strftime("%H%M%S"))
-    catalog = get_param("CATALOG", required=True)
-    bronze = f"{catalog}.<source>.{ENTITY}_bronze"
+    run_id = args.JOB_RUN_ID or datetime.now(timezone.utc).strftime("%H%M%S")
+    bronze = f"{args.CATALOG}.<source>.{ENTITY}_bronze"
 
     records = fetch_entities(latest_watermark(spark, bronze), token)
     changed = filter_records_needing_update(spark, records, bronze, key_field="id")
@@ -92,7 +102,10 @@ def main() -> None:
             pass
         return
 
-    path = write_landing(changed, get_landing_dir("<source>"), run_id)
+    from <package>.env import LANDING_VOLUME_PATTERN
+
+    landing = LANDING_VOLUME_PATTERN.format(catalog=args.CATALOG, source="<source>")
+    path = write_landing(changed, landing, run_id)
     logger.info("wrote %d records to %s", len(changed), path)
 
 

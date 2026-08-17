@@ -17,6 +17,10 @@ LANDING = f"/Volumes/{CATALOG}/<source>/landing/players"
     name="players_bronze",
     comment="Raw <source> players as fetched. Permissive: schema drift is rescued, not dropped.",
 )
+# Rescued-data check lives on BRONZE: expectations resolve against the output
+# dataset, and silver drops _rescued — an expectation there fails analysis
+# (proven the hard way in a live pipeline).
+@dlt.expect("no_rescued_data", "_rescued IS NULL")
 def players_bronze():
     return (
         spark.readStream.format("cloudFiles")
@@ -35,7 +39,6 @@ def players_bronze():
     comment="Typed, deduplicated <source> players. One row per natural key, latest wins.",
 )
 @dlt.expect_or_drop("valid_id", "id IS NOT NULL")
-@dlt.expect("no_rescued_data", "_rescued IS NULL")          # warn-level: schema drift is visible, not fatal
 def players_silver():
     return (
         dlt.read("players_bronze")
@@ -51,6 +54,8 @@ def players_silver():
         .drop("_rn", "_rescued")
     )
 ```
+
+Failure economics: a deterministic analysis error (unresolvable column, bad expectation) still triggers the pipeline's internal `RETRY_ON_FAILURE` loop — observed ~25 min of serverless burned on identical failures. When a pipeline fails at *analysis* time, cancel the run; retrying cannot help. `bundle validate` cannot catch these — they surface only at pipeline analysis.
 
 Shape rules:
 
